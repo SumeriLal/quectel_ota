@@ -7,6 +7,7 @@ import _thread
 from usr.app_ota import run_app_ota
 from usr.modbus_RTU import get_modbus_data
 from machine import WDT
+from misc import Power
 
 PROJECT_NAME = "GC2_MQTT"
 PROJECT_VERSION = "1.0.0"
@@ -53,6 +54,7 @@ def set_gpio_status(pin, status):
     gpio_state[pin] = status
     if pin==3 and status == True:
         print("Updating the Restarting the CPU")
+        Power.powerRestart()
     gpio_state[pin] = status
 
 def on_connect(client):
