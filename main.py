@@ -53,7 +53,7 @@ def set_gpio_status(pin, status):
         run_app_ota()
     gpio_state[pin] = status
     if pin==3 and status == True:
-        print("Updating the Restarting the CPU")
+        print("Updating the Restarting the CPU in few seconds")
         Power.powerRestart()
     gpio_state[pin] = status
 
