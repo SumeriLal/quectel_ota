@@ -1,7 +1,16 @@
-.DS_Store
-node_modules/
-package-lock.json
-yarn.lock
-npm-debug.log
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+env/
+venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment variables file
+.env
+
 .idea/
-dist/
