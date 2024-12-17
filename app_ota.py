@@ -32,25 +32,18 @@ def run_app_ota():
     try:
         # Download the application files in bulk
         print("Downloading application files...")
-        x = fota.bulk_download(download_list)
-        print("----------------->", x)
-        if x is not None:
-            print("Download completed successfully. Sumeri Lal")
+        fota.bulk_download(download_list)
+        print("Download completed successfully.")
 
-            # Set the update flag for FOTA
-            print("Setting update flag...")
-            fota.set_update_flag()
+        # Set the update flag for FOTA
+        print("Setting update flag...")
+        fota.set_update_flag()
 
-            # Restart the device to apply updates
-            print("Restarting the device to apply updates...")
-            Power.powerRestart()
-        else:
-            print("Error in OTA firmware links.")
+        # Restart the device to apply updates
+        print("Restarting the device to apply updates...")
+        Power.powerRestart()
 
     except Exception as e:
         # Handle any errors during the OTA process
         print("Error during OTA process:", e)
         print("OTA update failed. Please check logs and retry.")
-
-
-run_app_ota()
