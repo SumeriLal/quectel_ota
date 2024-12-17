@@ -123,7 +123,6 @@ if __name__ == '__main__':
     stagecode, subcode = checknet.wait_network_connected(30)
     if stagecode == 3 and subcode == 1:
         print(data_dev["author"], data_dev["copyright"])
-        print("Hello from quectel")
         mqtt_log.info("Network connection successful!")
 
         # Create MQTT client instance
