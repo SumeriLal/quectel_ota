@@ -7,14 +7,9 @@ def setup_device_credentials():
     if ql_fs.path_exists(file_name):
         try:
             data = ql_fs.read_json(file_name)
-            device_id = data['device_id']
-            user = data['device_id']
-            password = data['password']
-            print(device_id, user, password)
             return data
         except Exception as e:
             print("Error in reading the json file: {}".format(e))
-            print(e)
     else:
         current_time = utime.localtime()
         # Extract the year, month, and day
@@ -22,13 +17,11 @@ def setup_device_credentials():
         month = current_time[1]
         day = current_time[2]
         today = ("{}{}{}".format(day,month, year))
-        print(today)
         formatted_date = today
         imei_number = modem.getDevImei()
         last_six_digits = imei_number[-6:]  # Slicing to get the last 6 characters
         username = "NLDT" + "_" + formatted_date + "_" + last_six_digits
         password = "newleaf" + "_" + last_six_digits
-        print(username)
         initial_data = {
             "device_id": username,
             "password": password,
