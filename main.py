@@ -5,26 +5,27 @@ import checkNet
 import ujson
 import _thread
 from usr.app_ota import run_app_ota
+from usr.device_credentials import setup_device_credentials
 from usr.modbus_RTU import get_modbus_data
 from machine import WDT
 from misc import Power
 
-PROJECT_NAME = "GC2_MQTT"
+PROJECT_NAME = "New Leaf IoT 2.0"
 PROJECT_VERSION = "1.0.0"
 
 checknet = checkNet.CheckNetwork(PROJECT_NAME, PROJECT_VERSION)
 
 # Set the log output level.
 log.basicConfig(level=log.INFO)
-mqtt_log = log.getLogger("MQTT")
+mqtt_log = log.getLogger("GC")
 
 state = 0
-
-device_id = "gc400_002_031224"
+data_dev = setup_device_credentials()
+device_id = data_dev['device_id']
 server = "mqtt.thingsboard.cloud"
 port = 1883
-user = "gc400_002_031224"
-password = "newleaf-gc002"
+user = device_id
+password = data_dev['password']
 
 # device_id = "mqttx_7b31b9a5"
 # server = "broker.hivemq.com"
@@ -127,6 +128,7 @@ if __name__ == '__main__':
     # Wait for network connection
     stagecode, subcode = checknet.wait_network_connected(30)
     if stagecode == 3 and subcode == 1:
+        print(data_dev["author"], data_dev["copyright"])
         mqtt_log.info("Network connection successful!")
 
         # Create MQTT client instance
@@ -140,7 +142,6 @@ if __name__ == '__main__':
             on_connect(client)  # Call on_connect after connecting
         except Exception as e:
             mqtt_log.error("Failed to connect to MQTT broker: {}".format(e))
-            exit(1)
 
         wdt.feed()  # Feed the watchdog timer
         try:
