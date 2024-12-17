@@ -27,6 +27,8 @@ port = 1883
 user = device_id
 password = data_dev['password']
 
+print("Hello from quectel")
+
 # device_id = "mqttx_7b31b9a5"
 # server = "broker.hivemq.com"
 # port = 1883
