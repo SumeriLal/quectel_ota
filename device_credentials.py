@@ -26,7 +26,7 @@ def setup_device_credentials():
             "device_id": username,
             "password": password,
             "author": "This device and firmware were developed by Sumeri Lal on the behalf of New Leaf Dynamic Technology Pvt Ltd.",
-            "copyright": "All rights reserved ©2024."
+            "copyright": "All rights reserved © 2024."
         }
         ql_fs.touch(file_name, initial_data)
         print("Setup credentials has been generated successfully.")

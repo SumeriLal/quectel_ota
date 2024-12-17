@@ -81,7 +81,6 @@ def on_message(topic, msg):
             if method == "getGpioStatus":
                 response = get_gpio_status()  # Get GPIO status as JSON
                 client.publish(topic.replace(b'request', b'response'), response)
-                # client.publish(topic.replace("request", "response"), response.encode(), 1)
                 mqtt_log.info("Sent GPIO status response")
 
             # Handle "setGpioStatus" method
@@ -93,7 +92,6 @@ def on_message(topic, msg):
                     set_gpio_status(pin, enabled)
                     response = get_gpio_status()
                     client.publish(topic.replace(b'request', b'response'), response)
-                    # client.publish(topic.replace("request", "response"), response.encode(), 1)
                     mqtt_log.info("Updated GPIO state and sent response")
     except Exception as e:
         mqtt_log.error("Error processing received message: {}".format(e))
