@@ -27,8 +27,6 @@ port = 1883
 user = device_id
 password = data_dev['password']
 
-print("Hello from quectel")
-
 # device_id = "mqttx_7b31b9a5"
 # server = "broker.hivemq.com"
 # port = 1883
@@ -125,6 +123,7 @@ if __name__ == '__main__':
     stagecode, subcode = checknet.wait_network_connected(30)
     if stagecode == 3 and subcode == 1:
         print(data_dev["author"], data_dev["copyright"])
+        print("Hello from quectel")
         mqtt_log.info("Network connection successful!")
 
         # Create MQTT client instance
