@@ -32,8 +32,9 @@ def run_app_ota():
     try:
         # Download the application files in bulk
         print("Downloading application files...")
-        fota.bulk_download(download_list)
-        print("Download completed successfully.")
+        x = fota.bulk_download(download_list)
+        print("----------------->", x)
+        print("Download completed successfully. Sumeri Lal")
 
         # Set the update flag for FOTA
         print("Setting update flag...")
@@ -47,3 +48,6 @@ def run_app_ota():
         # Handle any errors during the OTA process
         print("Error during OTA process:", e)
         print("OTA update failed. Please check logs and retry.")
+
+
+run_app_ota()

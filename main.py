@@ -59,9 +59,6 @@ def set_gpio_status(pin, status):
     gpio_state[pin] = status
 
 def on_connect(client):
-    """
-    Called when the client successfully connects to the MQTT broker.
-    """
     mqtt_log.info("Connected to MQTT broker")
     client.subscribe(TOPIC_SUB)
     client.publish(TOPIC_SUB_ATTRIB, get_gpio_status(), 1)
@@ -71,7 +68,6 @@ def on_message(topic, msg):
     global state
     mqtt_log.info("Message received. Topic={}, Msg={}".format(topic.decode(), msg.decode()))
     state = 1
-
     try:
         # Decode the received message
         message = ujson.loads(msg.decode())
