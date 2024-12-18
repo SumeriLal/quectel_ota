@@ -36,7 +36,7 @@ def run_app_ota():
         if ota_data is None:
             print("Download completed successfully.")
             # Set the update flag for FOTA
-            print("Setting update flag... Hello Sumeri Lal")
+            print("Setting update flag...")
             fota.set_update_flag()
 
             # Restart the device to apply updates
