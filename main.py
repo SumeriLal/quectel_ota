@@ -6,7 +6,7 @@ import ujson
 import _thread
 from usr.app_ota import run_app_ota
 from usr.device_credentials import setup_device_credentials
-from usr.modbus_RTU import get_modbus_data
+from usr.modbus_RTU_update_onChange import get_modbus_data
 from machine import WDT
 from misc import Power
 
