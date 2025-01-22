@@ -6,7 +6,7 @@ import ujson
 import _thread
 from usr.app_ota import run_app_ota
 from usr.device_credentials import setup_device_credentials
-from usr.modbus_RTU_update_onChange import get_modbus_data
+from usr.modbus_setting_update_oncycle_count import get_modbus_data
 from machine import WDT
 from misc import Power
 
@@ -17,7 +17,8 @@ checknet = checkNet.CheckNetwork(PROJECT_NAME, PROJECT_VERSION)
 
 # Set the log output level.
 log.basicConfig(level=log.INFO)
-mqtt_log = log.getLogger("GC")
+mqtt_log = log.getLogger("MQTT")
+device_log = log.getLogger("GC400")
 
 state = 0
 data_dev = setup_device_credentials()
@@ -27,10 +28,7 @@ port = 1883
 user = device_id
 password = data_dev['password']
 
-# device_id = "mqttx_7b31b9a5"
-# server = "broker.hivemq.com"
-# port = 1883
-
+print("Client ID: {}, Username: {}, Password: {}" .format(device_id, device_id, password))
 
 # Configure topics
 TOPIC_PUB = "v1/devices/me/telemetry"
@@ -113,6 +111,7 @@ def subscribe_messages():
     try:
         while True:
             client.check_msg()  # Non-blocking call to check for messages
+            wdt.feed()  # Feed the watchdog timer
             utime.sleep(0.1)  # Small delay to prevent 100% CPU usage
     except Exception as e:
         mqtt_log.error("Error in subscription loop: {}".format(e))
@@ -120,11 +119,11 @@ def subscribe_messages():
 
 if __name__ == '__main__':
     # Wait for network connection
+    checknet.poweron_print_once()
     stagecode, subcode = checknet.wait_network_connected(30)
     if stagecode == 3 and subcode == 1:
         print(data_dev["author"], data_dev["copyright"])
-        mqtt_log.info("Network connection successful!")
-
+        mqtt_log.info('【Look Out】 Network Ready, connection successful!')
         # Create MQTT client instance
         client = MQTTClient(client_id=device_id, server=server, port=port, user=user, password=password)
         # client = MQTTClient(client_id=device_id, server=server, port=port)
@@ -141,11 +140,12 @@ if __name__ == '__main__':
         try:
             # Start the publish data thread
             _thread.start_new_thread(publish_data, ())
+            wdt.feed()
             # Start the subscribe messages thread
             _thread.start_new_thread(subscribe_messages, ())
+            wdt.feed()
             while True:
-                utime.sleep(2)  # Keep the main thread alive
-                wdt.feed()
+                utime.sleep(5)  # Keep the main thread alive
 
         except Exception as e:
             mqtt_log.error("An unexpected error occurred: {}".format(e))
@@ -153,5 +153,12 @@ if __name__ == '__main__':
             # Disconnect on exit
             client.disconnect()
             mqtt_log.info("Disconnected from broker")
+
+    elif stagecode == 1 and subcode == 0:
+        device_log.warning('【Look Out】 No Sim Card Inserted\r\n')
+    elif stagecode == 1 and subcode == 2:
+        device_log.warning('【Look Out】 The Sim Card is Locked\r\n')
+    elif stagecode == 2 and subcode == 0:
+        device_log.warning('【Look Out】 Timeout: Not Netted\r\n')
     else:
-        mqtt_log.info("Network connection failed! stagecode={}, subcode={}".format(stagecode, subcode))
+        device_log.warning('【Look Out】 Network Not Available\r\n')
