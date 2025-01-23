@@ -11,8 +11,8 @@ def run_app_ota():
             'file_name': '/usr/main.py'
         },
         {
-            'url': 'https://raw.githubusercontent.com/SumeriLal/quectel_ota/main/modbus_RTU.py',
-            'file_name': '/usr/modbus_RTU.py'
+            'url': 'https://raw.githubusercontent.com/SumeriLal/quectel_ota/main/modbus_setting_update_oncycle_count.py',
+            'file_name': '/usr/modbus_setting_update_oncycle_count.py'
         },
         {
             'url': 'https://raw.githubusercontent.com/SumeriLal/quectel_ota/main/app_ota.py',
