@@ -25,6 +25,10 @@ def run_app_ota():
         {
             'url': 'https://raw.githubusercontent.com/SumeriLal/quectel_ota/main/device_credentials.py',
             'file_name': '/usr/device_credentials.py'
+        },
+        {
+            'url': 'https://raw.githubusercontent.com/SumeriLal/quectel_ota/main/main2_components.py',
+            'file_name': '/usr/main2_components.py'
         }
     ]
 
