@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 # Import modules & global variables
-
+import ql_fs
+file_name = "/usr/config/current_cycle_count.json"
 if True:  # Convenient code folding, can be omitted
     import log, utime, _thread, checkNet, ujson
     from machine import WDT, UART
@@ -368,6 +369,13 @@ def press_sensor_value(value):
 #     return register2
 
 prev_cycle_count = None  # Define outside the function
+if ql_fs.path_exists(file_name):
+    count_data = ql_fs.read_json(file_name)
+    prev_cycle_count = count_data['cycle_count']
+else:
+    initial_data = {'cycle_count': 0}
+    ql_fs.touch(file_name, initial_data)
+
 def get_modbus_data():
     # callback to read analog ppi data registers for the 8-channel sensors reading
     ppi_registers_data = modbus.read_holding_registers(2, 1561, 8)
@@ -414,6 +422,8 @@ def get_modbus_data():
     global prev_cycle_count  # Use the global variable
     if cycle_count != prev_cycle_count:
         prev_cycle_count = cycle_count
+        cycle_data = {'cycle_count': cycle_count}
+        ql_fs.touch(file_name, cycle_data)
         # callback function to read plc data for getting the details and status of the plc
         plc_resgisters_data = modbus.read_holding_registers(1, 4936, 47)
         plc_register = modbus_rtu_to_decimal(plc_resgisters_data)
