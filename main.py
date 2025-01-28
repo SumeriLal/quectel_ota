@@ -58,9 +58,12 @@ def set_gpio_status(pin, status):
 
 def on_connect(client):
     mqtt_log.info("Connected to MQTT broker")
+    start_log = {"started_at": "started"}
+    log_data = ujson.dumps(start_log)
     client.subscribe(TOPIC_SUB)
     client.publish(TOPIC_SUB_ATTRIB, get_gpio_status(), 1)
     mqtt_log.info("Subscribed to topic: {}".format(TOPIC_SUB))
+    client.publish(TOPIC_PUB, log_data)
 
 def on_message(topic, msg):
     global state
