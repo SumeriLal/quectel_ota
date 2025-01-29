@@ -97,15 +97,18 @@ def on_message(topic, msg):
 def publish_data():
     try:
         while True:
-            # Read Modbus data and publish it
-            data = get_modbus_data()
-            json_string = ujson.dumps(data)
-            client.publish(TOPIC_PUB, json_string)
-            mqtt_log.info("Published topic: {} with data: {}".format(TOPIC_PUB, json_string))
+            try:
+                # Read Modbus data and publish it
+                data = get_modbus_data()
+                json_string = ujson.dumps(data)
+                client.publish(TOPIC_PUB, json_string)
+                mqtt_log.info("Published topic: {} with data: {}".format(TOPIC_PUB, json_string))
 
-            # Delay between publishing messages
-            utime.sleep(2)
-            wdt.feed()  # Feed the watchdog timer
+                # Delay between publishing messages
+                utime.sleep(2)
+                wdt.feed()  # Feed the watchdog timer
+            except Exception as e:
+                mqtt_log.error("Error in getting Modbus data: {}".format(e))
     except Exception as e:
         mqtt_log.error("Error in publishing data: {}".format(e))
 
@@ -149,7 +152,6 @@ if __name__ == '__main__':
             wdt.feed()
             while True:
                 utime.sleep(5)  # Keep the main thread alive
-
         except Exception as e:
             mqtt_log.error("An unexpected error occurred: {}".format(e))
         finally:
