@@ -373,7 +373,7 @@ if ql_fs.path_exists(file_name):
     count_data = ql_fs.read_json(file_name)
     prev_cycle_count = count_data['cycle_count']
 else:
-    initial_data = {'cycle_count': 0}
+    initial_data = {'cycle_count': 0, "machine_id": None}
     ql_fs.touch(file_name, initial_data)
 
 def get_modbus_data():
@@ -422,8 +422,6 @@ def get_modbus_data():
     global prev_cycle_count  # Use the global variable
     if cycle_count != prev_cycle_count:
         prev_cycle_count = cycle_count
-        cycle_data = {'cycle_count': cycle_count}
-        ql_fs.touch(file_name, cycle_data)
         # callback function to read plc data for getting the details and status of the plc
         plc_resgisters_data = modbus.read_holding_registers(1, 4936, 47)
         plc_register = modbus_rtu_to_decimal(plc_resgisters_data)
@@ -442,6 +440,9 @@ def get_modbus_data():
         shaking_sleep_on_time = plc_register[12]
         shaking_before_sleep_time = plc_register[13]
         hot_water_temp_start = plc_register[25]
+        # machine_id = plc_register[29]
+        device_id = (plc_register[29] << 16) + plc_register[28]
+        machine_id = device_id
         feed_interval_cashew_auto = plc_register[30]
         feed_duration_cashew_auto = plc_register[31]
         feed_interval_cashew_sleep = plc_register[32]
@@ -460,6 +461,11 @@ def get_modbus_data():
         feed_duration_wood_sleep = plc_register[45]
         pump_on_delay = plc_register[46]
 
+        # Store cycle and machine id into the json file.
+        cycle_data = {'cycle_count': cycle_count, "machine_id": machine_id}
+        ql_fs.touch(file_name, cycle_data)
+
+        # Convert all data into json format for the publishing on the server.
         data_from_plc = { "half_cycle_hrs": half_cycle_hrs, "half_cycle_min": half_cycle_min, "half_cycle_sec": half_cycle_sec, "since_start_hrs": since_start_hrs,
                       "since_start_min": since_start_min, "since_start_sec": since_start_sec, "cycle_count": cycle_count, "step_current_sts": step_current_sts,
                           "time_to_start": time_to_start, "half_cycle_time": half_cycle_time, "elpsd_cycle_time": elpsd_cycle_time, "blower_off_remain": blower_off_remain,

@@ -3,12 +3,17 @@ import utime
 import log
 import checkNet
 import ujson
+import ql_fs
 import _thread
+import modem
+import sim
 from usr.app_ota import run_app_ota
 from usr.device_credentials import setup_device_credentials
 from usr.modbus_setting_update_oncycle_count import get_modbus_data
 from machine import WDT
 from misc import Power
+
+file_name = "/usr/config/current_cycle_count.json"
 
 PROJECT_NAME = "New Leaf IoT 2.0"
 PROJECT_VERSION = "1.0.0"
@@ -58,7 +63,10 @@ def set_gpio_status(pin, status):
 
 def on_connect(client):
     mqtt_log.info("Connected to MQTT broker")
-    start_log = {"started_at": "started"}
+    imei_number = modem.getDevImei()
+    sim_no = sim.getPhoneNumber()
+    count_data = ql_fs.read_json(file_name)
+    start_log = {"started_at": "started", "machine_id": count_data['machine_id'], "sim_no": sim_no, 'imei_number': imei_number}
     log_data = ujson.dumps(start_log)
     client.subscribe(TOPIC_SUB)
     client.publish(TOPIC_SUB_ATTRIB, get_gpio_status(), 1)
