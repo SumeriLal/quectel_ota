@@ -372,6 +372,8 @@ prev_cycle_count = None  # Define outside the function
 if ql_fs.path_exists(file_name):
     count_data = ql_fs.read_json(file_name)
     prev_cycle_count = count_data['cycle_count']
+    initial_data = {'cycle_count': prev_cycle_count, "machine_id": None}
+    ql_fs.touch(file_name, initial_data)
 else:
     initial_data = {'cycle_count': 0, "machine_id": None}
     ql_fs.touch(file_name, initial_data)
