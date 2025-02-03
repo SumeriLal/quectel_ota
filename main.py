@@ -113,7 +113,7 @@ def publish_data():
                 mqtt_log.info("Published topic: {} with data: {}".format(TOPIC_PUB, json_string))
 
                 # Delay between publishing messages
-                utime.sleep(2)
+                utime.sleep(20)
                 wdt.feed()  # Feed the watchdog timer
             except Exception as e:
                 mqtt_log.error("Error in getting Modbus data: {}".format(e))
