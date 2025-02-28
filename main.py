@@ -19,7 +19,6 @@ PROJECT_NAME = "New Leaf IoT 2.0"
 PROJECT_VERSION = "1.0.0"
 
 checknet = checkNet.CheckNetwork(PROJECT_NAME, PROJECT_VERSION)
-
 # Set the log output level.
 log.basicConfig(level=log.INFO)
 mqtt_log = log.getLogger("MQTT")
@@ -113,7 +112,7 @@ def publish_data():
                 mqtt_log.info("Published topic: {} with data: {}".format(TOPIC_PUB, json_string))
 
                 # Delay between publishing messages
-                utime.sleep(20)
+                utime.sleep(30)
                 wdt.feed()  # Feed the watchdog timer
             except Exception as e:
                 mqtt_log.error("Error in getting Modbus data: {}".format(e))
