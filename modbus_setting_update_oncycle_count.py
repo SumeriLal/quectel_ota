@@ -325,7 +325,6 @@ def modbus_rtu_to_decimal(data):
 
     return decimal_values
 
-
 def convert_room1_temp(room1):
     # Check if the MSB (0x8000) is set, indicating a negative number in a signed 16-bit integer
     if room1 & 0x8000:
@@ -349,7 +348,6 @@ def sensor_value(value):
         sensor_data = value/10
         return "{:.1f}".format(sensor_data)
 
-
 def press_sensor_value(value):
     if value >= 3000:
         value = None
@@ -358,15 +356,28 @@ def press_sensor_value(value):
         sensor_data = value/100
         return sensor_data
 
-# def convert_float_to_registers(float_val):
-#     # Pack the float into 4 bytes in little-endian format
-#     buffer = ustruct.pack('<f', float_val)
-#
-#     # Unpack the buffer into two unsigned 16-bit integers
-#     register1, register2 = ustruct.unpack('<HH', buffer)
-#
-#     # Return the two registers as a list
-#     return register2
+
+r_load = 1
+supply_voltage = 5.0
+adc_resolution = 1023.0
+pressure_min = 0
+pressure_max = 10
+
+
+def map_float(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+def press_cal_function(value):
+    if value is None:
+        return None
+    else:
+        val = value
+        voltage = (val / adc_resolution) * supply_voltage
+        current_mA = (voltage / r_load) * 1000.0
+        pressure = map_float(current_mA, 4.0, 20.0, pressure_min, pressure_max)
+        pressure_data = round(pressure, 2)
+        return pressure_data
+
 
 prev_cycle_count = None  # Define outside the function
 if ql_fs.path_exists(file_name):
@@ -380,102 +391,89 @@ def get_modbus_data():
     # callback to read analog ppi data registers for the 8-channel sensors reading
     ppi_registers_data = modbus.read_holding_registers(2, 1561, 8)
     ppi_register = modbus_rtu_to_decimal(ppi_registers_data)
-    evap_press = press_sensor_value(ppi_register[6])
-    cond_press = press_sensor_value(ppi_register[7])
-    cond_temp = calculate_press_temp(cond_press)
-    evap_temp = calculate_press_temp(evap_press)
-    room1_temp_value = convert_room1_temp(ppi_register[5])
     chimney_temp = sensor_value(ppi_register[0])
     hot_water_temp = sensor_value(ppi_register[1])
-    hot_out_temp = sensor_value(ppi_register[2])
+    r1_out_temp = sensor_value(ppi_register[2])
     cold_water_temp = sensor_value(ppi_register[3])
-    cold_out_temp = sensor_value(ppi_register[4])
+    r2_out_temp = sensor_value(ppi_register[4])
+    room1_temp_value = convert_room1_temp(ppi_register[5])
     room1_temp = sensor_value(room1_temp_value)
+    evap_press = press_sensor_value(ppi_register[6])
+    cond_press = press_sensor_value(ppi_register[7])
+    evap_press_in_bar = press_cal_function(evap_press)
+    cond_press_in_bar = press_cal_function(cond_press)
+    cond_temp = calculate_press_temp(cond_press_in_bar)
+    evap_temp = calculate_press_temp(evap_press_in_bar)
 
     # callback function to read plc data for getting the details and status of the plc
-    plc_resgisters_data1 = modbus.read_holding_registers(1, 4912, 17)
+    plc_resgisters_data1 = modbus.read_holding_registers(1, 4900, 36)
     plc_register1 = modbus_rtu_to_decimal(plc_resgisters_data1)
-    half_cycle_hrs = plc_register1[0]
-    half_cycle_min = plc_register1[1]
-    half_cycle_sec = plc_register1[2]
-    since_start_hrs = plc_register1[3]
-    since_start_min = plc_register1[4]
-    since_start_sec = plc_register1[5]
-    cycle_count = plc_register1[6]
+    cycle_count = plc_register1[0]
     graph_cycle_count = cycle_count
-    step_current_sts = plc_register1[7]
-    time_to_start = plc_register1[8]
-    half_cycle_time = plc_register1[9]
-    elpsd_cycle_time = plc_register1[10]
-    blower_off_remain = plc_register1[11]
-    blower_on_remain = plc_register1[12]
-    shaking_auto_elpsd_time = plc_register1[13]
-    shaking_sleep_elpsd_time = plc_register1[14]
-    ignition_time_auto = plc_register1[15]
-    ignition_time_sleep = plc_register1[16]
+    elpsd_cycle_time = plc_register1[1]
+    step_current_sts = plc_register1[2]
+    time_to_start = plc_register1[3]
+    since_start_hrs = plc_register1[4]
+    since_start_min = plc_register1[5]
 
-    data = {"chimney_temp": chimney_temp, "hot_water_temp": hot_water_temp, "hot_out_temp": hot_out_temp,
-            "cold_water_temp": cold_water_temp, "cold_out_temp": cold_out_temp, "room1_temp": room1_temp,
-            "evap_press": evap_press, "evap_temp": evap_temp, "cond_press": cond_press, "cond_temp": cond_temp, "graph_cycle_count": graph_cycle_count,
-            "elpsd_cycle_time": elpsd_cycle_time, "step_current_sts": step_current_sts, "time_to_start": time_to_start}
+    # device_id = (plc_register1[35] << 16) + plc_register1[34]
+    # machine_id = device_id
+    # print("------------------->Machine Id", machine_id)
+
+
+    data = {"chimney_temp": chimney_temp, "hot_water_temp": hot_water_temp, "r1_out_temp": r1_out_temp,
+            "cold_water_temp": cold_water_temp, "r2_out_temp": r2_out_temp, "room1_temp": room1_temp,
+            "evap_press": evap_press_in_bar, "evap_temp": evap_temp, "cond_press": cond_press_in_bar, "cond_temp": cond_temp, "graph_cycle_count": graph_cycle_count,
+            "elpsd_cycle_time": elpsd_cycle_time, "step_current_sts": step_current_sts, "time_to_start": time_to_start, "since_start_hrs": since_start_hrs, "since_start_min": since_start_min}
 
     global prev_cycle_count  # Use the global variable
     if cycle_count != prev_cycle_count:
         prev_cycle_count = cycle_count
         # callback function to read plc data for getting the details and status of the plc
-        plc_resgisters_data = modbus.read_holding_registers(1, 4936, 47)
-        plc_register = modbus_rtu_to_decimal(plc_resgisters_data)
-        recirc_time = plc_register[0]
-        reactor_cool_time = plc_register[1]
-        ammonia_drain_time = plc_register[2]
-        evaporator_evac_time = plc_register[3]
-        hc_perc_next_start = plc_register[4]
-        duty_cycle = plc_register[5] / 10
-        duty_period = plc_register[6] / 100
-        blower_off_time = plc_register[7]
-        blower_on_time = plc_register[8]
-        shaking_auto_off_time = plc_register[9]
-        shaking_sleep_off_time = plc_register[10]
-        shaking_auto_on_time = plc_register[11]
-        shaking_sleep_on_time = plc_register[12]
-        shaking_before_sleep_time = plc_register[13]
-        hot_water_temp_start = plc_register[25]
+        half_cycle_time = plc_register1[6]
+        duty_cycle = plc_register1[7] / 10
+        duty_period = plc_register1[8] / 100
+        recirc_time = plc_register1[9]
+        reactor_cool_time = plc_register1[10]
+        reactor_cool_time_2nd = plc_register1[11]
+        ammonia_drain_time = plc_register1[12]
+        ammonia_drain_time_2nd = plc_register1[13]
+        evaporator_evac_time = plc_register1[14]
+        hc_perc_next_start = plc_register1[15]
+        pump_on_delay = plc_register1[16]
+        blower_off_time = plc_register1[17]
+        blower_on_time = plc_register1[18]
+        blower_remain_off = plc_register1[19]
+        blower_remain_on = plc_register1[20]
+        shaking_auto_off_time = plc_register1[21]
+        shaking_auto_on_time = plc_register1[22]
+        shaking_auto_remain_off = plc_register1[23]
+        shaking_sleep_off_time = plc_register1[24]
+        shaking_sleep_on_time = plc_register1[25]
+        shaking_sleep_remain_off = plc_register1[26]
+        shaking_interim_on_time = plc_register1[27]
+        feed_interval_auto = plc_register1[28]
+        feed_duration_auto = plc_register1[29]/10
+        feed_interval_sleep = plc_register1[30]
+        feed_duration_sleep = plc_register1[31]/10
+        hot_water_min_temp = plc_register1[32]
+        hot_water_max_temp = plc_register1[33]
         # machine_id = plc_register[29]
-        device_id = (plc_register[29] << 16) + plc_register[28]
+        device_id = (plc_register1[35] << 16) + plc_register1[34]
         machine_id = device_id
-        feed_interval_cashew_auto = plc_register[30]
-        feed_duration_cashew_auto = plc_register[31]
-        feed_interval_cashew_sleep = plc_register[32]
-        feed_duration_cashew_sleep = plc_register[33]
-        feed_interval_coffee_auto = plc_register[34]
-        feed_duration_coffee_auto = plc_register[35]
-        feed_interval_coffee_sleep = plc_register[35]
-        feed_duration_coffee_sleep = plc_register[37]
-        feed_interval_pallet_auto = plc_register[38]
-        feed_duration_pallet_auto = plc_register[39]
-        feed_interval_pallet_sleep = plc_register[40]
-        feed_duration_pallet_sleep = plc_register[41]
-        feed_interval_wood_auto = plc_register[42]
-        feed_duration_wood_auto = plc_register[43]
-        feed_interval_wood_sleep = plc_register[44]
-        feed_duration_wood_sleep = plc_register[45]
-        pump_on_delay = plc_register[46]
 
         # Store cycle and machine id into the json file.
         cycle_data = {'cycle_count': cycle_count, "machine_id": machine_id}
         ql_fs.touch(file_name, cycle_data)
 
         # Convert all data into json format for the publishing on the server.
-        data_from_plc = { "half_cycle_hrs": half_cycle_hrs, "half_cycle_min": half_cycle_min, "half_cycle_sec": half_cycle_sec, "since_start_hrs": since_start_hrs,
-                      "since_start_min": since_start_min, "since_start_sec": since_start_sec, "cycle_count": cycle_count, "step_current_sts": step_current_sts,
-                          "time_to_start": time_to_start, "half_cycle_time": half_cycle_time, "elpsd_cycle_time": elpsd_cycle_time, "blower_off_remain": blower_off_remain,
-                          "blower_on_remain": blower_on_remain, "shaking_auto_elpsd_time": shaking_auto_elpsd_time, "shaking_sleep_elpsd_time":shaking_sleep_elpsd_time, "ignition_time_auto": ignition_time_auto,
-                          "ignition_time_sleep": ignition_time_sleep, "recirc_time": recirc_time, "reactor_cool_time": reactor_cool_time, "ammonia_drain_time": ammonia_drain_time, "evaporator_evac_time": evaporator_evac_time,
-                          "hc_perc_next_start": hc_perc_next_start, "duty_cycle": duty_cycle, "duty_period": duty_period, "blower_off_time": blower_off_time, "blower_on_time": blower_on_time, "shaking_auto_off_time": shaking_auto_off_time,
-                          "shaking_sleep_off_time": shaking_sleep_off_time, "shaking_auto_on_time": shaking_auto_on_time, "shaking_sleep_on_time": shaking_sleep_on_time, "shaking_before_sleep_time": shaking_before_sleep_time, "hot_water_temp_start": hot_water_temp_start,
-                           "feed_interval_cashew_auto": feed_interval_cashew_auto, "feed_duration_cashew_auto": feed_duration_cashew_auto, "feed_interval_cashew_sleep": feed_interval_cashew_sleep, "feed_duration_cashew_sleep": feed_duration_cashew_sleep, "feed_interval_coffee_auto": feed_interval_coffee_auto,
-                          "feed_duration_coffee_auto": feed_duration_coffee_auto, "feed_interval_coffee_sleep": feed_interval_coffee_sleep, "feed_duration_coffee_sleep": feed_duration_coffee_sleep, "feed_interval_pallet_auto": feed_interval_pallet_auto, "feed_duration_pallet_auto": feed_duration_pallet_auto, "feed_interval_pallet_sleep": feed_interval_pallet_sleep,
-                          "feed_duration_pallet_sleep": feed_duration_pallet_sleep, "feed_interval_wood_auto": feed_interval_wood_auto, "feed_duration_wood_auto": feed_duration_wood_auto, "feed_interval_wood_sleep": feed_interval_wood_sleep, "feed_duration_wood_sleep": feed_duration_wood_sleep ,"pump_on_delay": pump_on_delay}
+        data_from_plc = { "cycle_count": cycle_count, "half_cycle_time": half_cycle_time, "duty_cycle": duty_cycle, "duty_period": duty_period, "recirc_time": recirc_time, "reactor_cool_time": reactor_cool_time, "reactor_cool_time_2nd": reactor_cool_time_2nd,
+                          "ammonia_drain_time": ammonia_drain_time,"ammonia_drain_time_2nd": ammonia_drain_time_2nd, "evaporator_evac_time": evaporator_evac_time, "hc_perc_next_start": hc_perc_next_start, "pump_on_delay": pump_on_delay, "blower_off_time": blower_off_time, "blower_on_time": blower_on_time,
+                          "blower_remain_off": blower_remain_off, "blower_remain_on": blower_remain_on, "shaking_auto_off_time": shaking_auto_off_time, "shaking_auto_on_time": shaking_auto_on_time, "shaking_auto_remain_off": shaking_auto_remain_off,"shaking_sleep_off_time": shaking_sleep_off_time, "shaking_sleep_on_time": shaking_sleep_on_time,
+                          "shaking_sleep_remain_off": shaking_sleep_remain_off, "shaking_interim_on_time": shaking_interim_on_time, "feed_interval_auto": feed_interval_auto, "feed_duration_auto": feed_duration_auto, "feed_interval_sleep": feed_interval_sleep, "feed_duration_sleep": feed_duration_sleep, "hot_water_min_temp": hot_water_min_temp,
+                          "hot_water_max_temp": hot_water_max_temp, "machine_id_read": machine_id}
+
+
         data.update(data_from_plc)
 
 
